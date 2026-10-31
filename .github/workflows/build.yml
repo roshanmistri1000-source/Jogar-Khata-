@@ -19,21 +19,17 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Build Web App Bundle / Direct APK via PWABuilder CLI
+    - name: Prepare App Files
       run: |
-        npm install -g @pwabuilder/pwapush
-        # Simple HTML to Android WebAPK compiler wrapper
-        mkdir -p android-app/app/src/main/assets/www
-        cp index.html android-app/app/src/main/assets/www/
+        echo "Preparing Jogar Khata files..."
+        mkdir -p output_files
+        cp index.html output_files/
         if [ -f "icon.png" ]; then
-          cp icon.png android-app/app/src/main/assets/www/
+          cp icon.png output_files/
         fi
 
-    - name: Use HTML to Native APK Fast Builder
-      uses: mitchellh/gox@v1.0.1 # dummy step to ensure clean run
-      if: always()
-
-    - name: Quick APK Packaging
-      run: |
-        echo "Packaging Jogar Khata..."
-        # Hum yahan ek bahut hi asan script use kar rahe hain jo bina cordova ke direct APK build karegi.
+    - name: Upload Clean Web Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: Jogar-Khata-Web-Package
+        path: output_files/
