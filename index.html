@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogar Khata</title>
+    <style>
+        * { box-sizing: border-box; font-family: sans-serif; }
+        body { background: #121212; color: #ffffff; margin: 0; padding: 10px; }
+        
+        /* Splash Screen with Auto-Hide CSS Backup */
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0d0d0d; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999;
+            animation: autoHideSplash 0.5s ease 2.2s forwards;
+            cursor: pointer;
+        }
+        @keyframes autoHideSplash {
+            to { opacity: 0; visibility: hidden; pointer-events: none; }
+        }
+        .splash-logo { font-size: 55px; margin-bottom: 10px; }
+        .splash-title { font-size: 28px; color: #00e676; font-weight: bold; margin-bottom: 20px; letter-spacing: 1px; }
+        .creator-box {
+            border: 2px solid #00e676; padding: 10px 25px; border-radius: 30px;
+            background: #1e1e1e; text-align: center; box-shadow: 0 0 15px rgba(0, 230, 118, 0.4);
+        }
+        .creator-label { font-size: 12px; color: #aaa; letter-spacing: 1px; }
+        .creator-name { font-size: 20px; color: #ffca28; font-weight: bold; margin-top: 3px; }
+        .tap-hint { font-size: 11px; color: #666; margin-top: 25px; }
+
+        h2 { text-align: center; color: #00e676; margin: 4px 0; font-size: 22px; }
+        p.sub { text-align: center; color: #b0bec5; margin: 0 0 8px 0; font-size: 11px; }
+
+        /* Machine Count Bar (3 vs 4 Machines) */
+        .m-count-bar { display: flex; gap: 6px; margin-bottom: 10px; background: #1a1a1a; padding: 5px; border-radius: 8px; border: 1px solid #2e2e2e; }
+        .m-count-btn { flex: 1; padding: 8px 4px; border: 1px solid #444; border-radius: 6px; background: #262626; color: #aaa; font-weight: bold; font-size: 12px; cursor: pointer; }
+        .m-count-btn.active { background: #29b6f6; color: #000; border-color: #29b6f6; }
+
+        /* Mode Switcher (Worker vs Manager) */
+        .mode-switch { display: flex; gap: 8px; margin-bottom: 10px; background: #1e1e1e; padding: 6px; border-radius: 10px; border: 1px solid #333; }
+        .mode-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; background: transparent; color: #aaa; font-weight: bold; font-size: 15px; cursor: pointer; }
+        .mode-btn.active-worker { background: #00e676; color: #000; }
+        .mode-btn.active-manager { background: #ffca28; color: #000; }
+
+        .tabs { display: flex; gap: 5px; margin-bottom: 12px; }
+        .tab-btn { flex: 1; padding: 10px 2px; background: #1e1e1e; color: #aaa; border: 1px solid #333; border-radius: 8px; font-weight: bold; font-size: 11px; cursor: pointer; }
+        .tab-btn.active { background: #00e676; color: #000; border-color: #00e676; }
+        .tab-btn.mgr-active { background: #ffca28; color: #000; border-color: #ffca28; }
+
+        .section { display: none; background: #1e1e1e; padding: 12px; border-radius: 10px; border: 1px solid #333; }
+        .section.active { display: block; }
+        
+        .machine-box { background: #2a2a2a; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #00e676; }
+        .mgr-box { border-left-color: #ffca28; }
+        .machine-title { font-weight: bold; margin-bottom: 8px; color: #ffca28; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .edit-m-btn { background: #37474f; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer; }
+        
+        .input-group { display: flex; gap: 8px; }
+        .input-group div { flex: 1; }
+        .box-5-group { display: flex; gap: 5px; }
+        .box-5-group div { flex: 1; }
+        
+        label { display: block; font-size: 11px; color: #ccc; margin-bottom: 4px; text-align: center; }
+        input { width: 100%; padding: 9px 4px; border-radius: 6px; border: 1px solid #555; background: #121212; color: #fff; font-size: 15px; text-align: center; }
+        input:focus { outline: none; border-color: #ffca28; }
+        
+        .btn { width: 100%; padding: 13px; background: #00e676; color: #000; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; margin-top: 8px; cursor: pointer; }
+        .btn-mgr { background: #ffca28; color: #000; }
+        .btn-row { display: flex; gap: 8px; margin-top: 8px; }
+        .btn-row .btn-mgr { flex: 2; margin-top: 0; }
+        .btn-clear-sec { flex: 1; padding: 13px 6px; background: #455a64; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+        .btn-danger { background: #ff5252; color: #fff; margin-top: 12px; padding: 10px; font-size: 13px; }
+        
+        .result-box { background: #263238; padding: 14px; border-radius: 8px; margin-top: 12px; text-align: center; border: 1px solid #00e676; display: none; }
+        .result-total { font-size: 24px; color: #00e676; font-weight: bold; margin: 6px 0; }
+        .rate-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-bottom: 6px; }
+        
+        /* Divide by 16 Highlight Box */
+        .div16-box {
+            background: #1a2327;
+            border: 1px dashed #29b6f6;
+            color: #29b6f6;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 17px;
+            font-weight: bold;
+            margin: 8px auto;
+            display: inline-block;
+        }
+        
+        .filter-bar { display: flex; gap: 6px; margin-bottom: 12px; }
+        .filter-btn { flex: 1; padding: 8px; background: #2a2a2a; color: #ccc; border: 1px solid #444; border-radius: 6px; font-size: 12px; font-weight: bold; }
+        .filter-btn.active { background: #29b6f6; color: #000; border-color: #29b6f6; }
+        
+        .summary-card { background: #004d40; padding: 12px; border-radius: 8px; margin-bottom: 12px; text-align: center; border: 1px solid #00e676; }
+        .record-item { background: #2a2a2a; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 12px; border-left: 3px solid #29b6f6; }
+        .record-date { color: #29b6f6; font-weight: bold; margin-bottom: 5px; display: flex; justify-content: space-between; }
+        .rec-actions { margin-top: 8px; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #3a3a3a; padding-top: 6px; }
+        .act-btn { padding: 4px 10px; border-radius: 4px; border: none; font-size: 11px; font-weight: bold; cursor: pointer; }
+        .btn-edit { background: #ffca28; color: #000; }
+        .btn-del { background: #ff5252; color: #fff; }
+        
+        .prev-badge { background: #37474f; color: #80deea; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+        .m-breakdown { font-size: 12px; color: #fff; background: #1e1e1e; padding: 8px; border-radius: 6px; margin-top: 8px; text-align: left; line-height: 1.6; }
+        
+        /* Target 50/100 Cards & Helper Buttons */
+        .target-card { background: #1e1e1e; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #00e676; text-align: left; }
+        .target-val { font-size: 22px; color: #00e676; font-weight: bold; }
+        .plus-btn-row { display: flex; gap: 8px; margin-top: 8px; }
+        .btn-plus-helper { flex: 2; padding: 10px; background: #29b6f6; color: #000; border: none; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer; }
+        .btn-clear-helper { flex: 1; padding: 10px; background: #455a64; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        
+        .footer { text-align: center; margin-top: 18px; font-size: 12px; color: #777; padding-bottom: 10px; }
+        .footer span { color: #ffca28; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- SPLASH SCREEN (Click ya 2 sec baad apne aap hatega) -->
+    <div id="splash-screen" onclick="this.style.display='none'">
+        <div class="splash-logo">📓</div>
+        <div class="splash-title">JOGAR KHATA</div>
+        <div class="creator-box">
+            <div class="creator-label">CREATED BY</div>
+            <div class="creator-name">Akash Mistri</div>
+        </div>
+        <div class="tap-hint">(Khul raha hai... ya screen par touch karein)</div>
+    </div>
+
+    <h2>📓 Jogar Khata</h2>
+    <p class="sub" id="rule-subtitle">4 Machine: 161+ Chatak = ₹100 | Kam = ₹90</p>
+
+    <!-- 3 MACHINE VS 4 MACHINE SELECTOR -->
+    <div class="m-count-bar">
+        <button id="mc-4" class="m-count-btn active" onclick="setMachineCount(4)">⚙️ 4 Machine (161 C = ₹100)</button>
+        <button id="mc-3" class="m-count-btn" onclick="setMachineCount(3)">⚙️ 3 Machine (122 C = ₹100)</button>
+    </div>
+
+    <!-- MAIN MODE SWITCHER -->
+    <div class="mode-switch">
+        <button id="btn-mode-worker" class="mode-btn active-worker" onclick="switchMode('worker')">👷 Worker Hisab</button>
+        <button id="btn-mode-manager" class="mode-btn" onclick="switchMode('manager')">👔 Manager Hisab</button>
+    </div>
+
+    <!-- ================= WORKER VIEW ================= -->
+    <div id="worker-view">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openWorkerTab('start', this)">🕑 2 PM (Start)</button>
+            <button class="tab-btn" onclick="openWorkerTab('end', this)">🕙 10 PM (End)</button>
+            <button class="tab-btn" onclick="openWorkerTab('records', this)">📜 Record</button>
+        </div>
+
+        <!-- 2 PM SHIFT START -->
+        <div id="w-start" class="section active">
+            <h3 style="margin-top:0; color:#ffca28; font-size:13px;">Pichle Operator ka Chatak (Max 15 C):</h3>
+            <div id="start-inputs"></div>
+            <button class="btn" onclick="saveStartShift()">✅ 2 Baje ka Chatak Save Karein</button>
+        </div>
+
+        <!-- 10 PM SHIFT END -->
+        <div id="w-end" class="section">
+            <div id="end-inputs"></div>
+            <button class="btn" onclick="calculateAndSave()">🧮 Hisab Nikalein & Save Karein</button>
+            <div id="final-result" class="result-box"></div>
+        </div>
+
+        <!-- RECORDS -->
+        <div id="w-records" class="section">
+            <div class="filter-bar">
+                <button class="filter-btn active" onclick="setFilter('all', this)">Sabhi</button>
+                <button class="filter-btn" onclick="setFilter('week', this)">7 Din (Hafta)</button>
+                <button class="filter-btn" onclick="setFilter('month', this)">Is Mahine</button>
+            </div>
+            <div id="record-list"></div>
+            <button class="btn btn-danger" onclick="clearRecords()">🗑️ Sara Purana Record Mitayein</button>
+        </div>
+    </div>
+
+    <!-- ================= MANAGER VIEW ================= -->
+    <div id="manager-view" style="display:none;">
+        <div class="tabs">
+            <button class="tab-btn mgr-active" onclick="openManagerTab('calc1', this)">🧮 Calc 1</button>
+            <button class="tab-btn" onclick="openManagerTab('calc2', this)">📊 Calc 2</button>
+            <button class="tab-btn" onclick="openManagerTab('total', this)">➕ Total</button>
+            <button class="tab-btn" onclick="openManagerTab('round', this)">🎯 50/100</button>
+        </div>
+
+        <!-- MANAGER CALCULATE 1 -->
+        <div id="m-calc1" class="section active">
+            <h3 style="margin-top:0; color:#ffca28; font-size:13px;">Start Jogar, Kapra aur End Jogar (Max 15 C):</h3>
+            <div id="mgr-calc1-inputs"></div>
+            <div class="btn-row">
+                <button class="btn btn-mgr" onclick="runManagerCalc1()">⚡ Hisab Nikalein</button>
+                <button class="btn-clear-sec" onclick="clearManagerCalc1()">✖ Saaf Karein</button>
+            </div>
+            <div id="mgr-res1" class="result-box"></div>
+        </div>
+
+        <!-- MANAGER CALCULATE 2 (5 BOXES) -->
+        <div id="m-calc2" class="section">
+            <h3 style="margin-top:0; color:#ffca28; font-size:13px;">5 Box Jogar (Max 15 C per box, jaise: 5, 13, 12, 8, 0):</h3>
+            <div id="mgr-calc2-inputs"></div>
+            <div class="btn-row">
+                <button class="btn btn-mgr" onclick="runManagerCalc2()">⚡ 5-Box Hisab</button>
+                <button class="btn-clear-sec" onclick="clearManagerCalc2()">✖ Saaf Karein</button>
+            </div>
+            <div id="mgr-res2" class="result-box"></div>
+        </div>
+
+        <!-- MANAGER OPTION 3: TOTAL -->
+        <div id="m-total" class="section">
+            <h3 style="margin-top:0; color:#ffca28; font-size:13px;">Jogar Total Karein (Jaise: 48 + 38 + 32 + 58):</h3>
+            <div class="machine-box mgr-box">
+                <div id="mgr-total-inputs" class="input-group"></div>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-mgr" onclick="runManagerTotal()">➕ Kul Jogar Jodein</button>
+                <button class="btn-clear-sec" onclick="clearManagerTotal()">✖ Saaf Karein</button>
+            </div>
+            <div id="mgr-res-total" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- MANAGER OPTION 4: 50 / 100 TARGET ROUND-UP WITH PLUS -->
+        <div id="m-round" class="section">
+            <h3 style="margin-top:0; color:#ffca28; font-size:14px;">🎯 Plus (+) aur 50/100 Target Calculator</h3>
+            <p style="font-size:12px; color:#ccc; margin-top:0;">Seedha number likhein ya <b>1127+1047</b> jodein, fir 50 aur 100 ka target dekhein:</p>
+            <div class="machine-box mgr-box">
+                <label style="font-size:13px; color:#ffca28;">Number ya Jod (+) Dalein (Jaise: 1127+1047):</label>
+                <input type="text" inputmode="decimal" id="round_input" placeholder="Jaise: 1127+1047" oninput="runRoundCalc()" style="font-size:20px; font-weight:bold; padding:12px;">
+                <div class="plus-btn-row">
+                    <button class="btn-plus-helper" onclick="insertPlusSign()">➕ Plus (+) Lagaayein</button>
+                    <button class="btn-clear-helper" onclick="clearRoundInput()">✖ Saaf Karein</button>
+                </div>
+            </div>
+            <div id="mgr-res-round" class="result-box" style="display:none;"></div>
+        </div>
+    </div>
+
+    <div class="footer">Created by <span>Akash Mistri</span></div>
+
+<script>
+    let currentFilter = 'all';
+
+    // Turant 1.8 second mein splash hatane ka timer
+    setTimeout(function() {
+        var sp = document.getElementById('splash-screen');
+        if(sp) sp.style.display = 'none';
+    }, 1800);
+
+    function limit15(el) {
+        if(el.value === "") return;
+        let val = parseInt(el.value);
+        if(val > 15) el.value = 15;
+        if(val < 0) el.value = 0;
+    }
+
+    function formatDiv16(totalChatak) {
+        return Number((totalChatak / 16).toFixed(4));
+    }
+
+    function getMachineCount() {
+        try {
+            return parseInt(localStorage.getItem('jogar_m_count') || '4');
+        } catch(e) { return 4; }
+    }
+
+    function getTargetChatak(mCount) {
+        return (mCount === 3) ? 122 : 161;
+    }
+
+    function setMachineCount(count) {
+        try { localStorage.setItem('jogar_m_count', count); } catch(e) {}
+        document.getElementById('mc-4').classList.toggle('active', count === 4);
+        document.getElementById('mc-3').classList.toggle('active', count === 3);
+        
+        let sub = document.getElementById('rule-subtitle');
+        if(count === 3) {
+            sub.innerText = "3 Machine Mode: 122+ Chatak = ₹100 | 122 se kam = ₹90";
+        } else {
+            sub.innerText = "4 Machine Mode: 161+ Chatak = ₹100 | 161 se kam = ₹90";
+        }
+        initForms();
+    }
+
+    function switchMode(mode) {
+        const wView = document.getElementById('worker-view');
+        const mView = document.getElementById('manager-view');
+        const wBtn = document.getElementById('btn-mode-worker');
+        const mBtn = document.getElementById('btn-mode-manager');
+
+        if(mode === 'worker') {
+            wView.style.display = 'block';
+            mView.style.display = 'none';
+            wBtn.className = 'mode-btn active-worker';
+            mBtn.className = 'mode-btn';
+        } else {
+            wView.style.display = 'none';
+            mView.style.display = 'block';
+            wBtn.className = 'mode-btn';
+            mBtn.className = 'mode-btn active-manager';
+        }
+    }
+
+    function getMachineNames() {
+        try {
+            return JSON.parse(localStorage.getItem('jogar_m_names') || '["Machine 1", "Machine 2", "Machine 3", "Machine 4"]');
+        } catch(e) {
+            return ["Machine 1", "Machine 2", "Machine 3", "Machine 4"];
+        }
+    }
+
+    function editMachineName(index) {
+        let names = getMachineNames();
+        let newName = prompt("Machine ka naya naam ya number likhein:", names[index]);
+        if(newName && newName.trim() !== "") {
+            names[index] = newName.trim();
+            try { localStorage.setItem('jogar_m_names', JSON.stringify(names)); } catch(e) {}
+            initForms();
+        }
+    }
+
+    function initForms() {
+        let mCount = getMachineCount();
+        document.getElementById('mc-4').classList.toggle('active', mCount === 4);
+        document.getElementById('mc-3').classList.toggle('active', mCount === 3);
+        document.getElementById('rule-subtitle').innerText = (mCount === 3) 
+            ? "3 Machine Mode: 122+ Chatak = ₹100 | 122 se kam = ₹90" 
+            : "4 Machine Mode: 161+ Chatak = ₹100 | 161 se kam = ₹90";
+
+        let startHtml = '';
+        let endHtml = '';
+        let mgr1Html = '';
+        let mgr2Html = '';
+        let mgrTotalHtml = '';
+        let savedStart = {};
+        try { savedStart = JSON.parse(localStorage.getItem('mill_shift_start') || '{}'); } catch(e) {}
+        let mNames = getMachineNames();
+
+        for(let i=1; i<=mCount; i++) {
+            let mName = mNames[i-1];
+            let prevVal = savedStart['M'+i] !== undefined ? savedStart['M'+i] : '';
+            
+            startHtml += `
+            <div class="machine-box">
+                <div class="machine-title">
+                    <span>⚙️ ${mName}</span>
+                    <button class="edit-m-btn" onclick="editMachineName(${i-1})">✏️ No. Badlein</button>
+                </div>
+                <label style="text-align:left;">Pichla Chatak (0 - 15):</label>
+                <input type="number" id="start_m${i}" value="${prevVal}" placeholder="0" max="15" oninput="limit15(this)">
+            </div>`;
+
+            endHtml += `
+            <div class="machine-box">
+                <div class="machine-title">
+                    <span>⚙️ ${mName}</span>
+                    <span class="prev-badge" id="badge_m${i}">Pichla: ${prevVal || 0} C</span>
+                </div>
+                <div class="input-group">
+                    <div>
+                        <label>Utara Kapra</label>
+                        <input type="number" id="end_k${i}" placeholder="0">
+                    </div>
+                    <div>
+                        <label>Abhi Chatak (Max 15)</label>
+                        <input type="number" id="end_c${i}" placeholder="0" max="15" oninput="limit15(this)">
+                    </div>
+                </div>
+            </div>`;
+
+            mgr1Html += `
+            <div class="machine-box mgr-box">
+                <div class="machine-title">
+                    <span>⚙️ ${mName}</span>
+                    <button class="edit-m-btn" onclick="editMachineName(${i-1})">✏️ No. Badlein</button>
+                </div>
+                <div class="input-group">
+                    <div>
+                        <label>Start (0-15)</label>
+                        <input type="number" id="m1_s${i}" placeholder="0" max="15" oninput="limit15(this)">
+                    </div>
+                    <div>
+                        <label>Kapra</label>
+                        <input type="number" id="m1_k${i}" placeholder="0">
+                    </div>
+                    <div>
+                        <label>End (0-15)</label>
+                        <input type="number" id="m1_e${i}" placeholder="0" max="15" oninput="limit15(this)">
+                    </div>
+                </div>
+            </div>`;
+
+            mgr2Html += `
+            <div class="machine-box mgr-box">
+                <div class="machine-title">
+                    <span>⚙️ ${mName}</span>
+                    <span class="prev-badge" id="m2_live_${i}">Kul: 0 C</span>
+                </div>
+                <div class="box-5-group">
+                    <div><label>Box 1</label><input type="number" id="m2_${i}_1" placeholder="-" max="15" oninput="limit15(this); previewM2(${i})"></div>
+                    <div><label>Box 2</label><input type="number" id="m2_${i}_2" placeholder="-" max="15" oninput="limit15(this); previewM2(${i})"></div>
+                    <div><label>Box 3</label><input type="number" id="m2_${i}_3" placeholder="-" max="15" oninput="limit15(this); previewM2(${i})"></div>
+                    <div><label>Box 4</label><input type="number" id="m2_${i}_4" placeholder="-" max="15" oninput="limit15(this); previewM2(${i})"></div>
+                    <div><label>Box 5</label><input type="number" id="m2_${i}_5" placeholder="-" max="15" oninput="limit15(this); previewM2(${i})"></div>
+                </div>
+            </div>`;
+
+            mgrTotalHtml += `
+            <div>
+                <label>${mName}</label>
+                <input type="number" id="mt_box_${i}" placeholder="0" oninput="runManagerTotal()">
+            </div>`;
+        }
+
+        document.getElementById('start-inputs').innerHTML = startHtml;
+        document.getElementById('end-inputs').innerHTML = endHtml;
+        document.getElementById('mgr-calc1-inputs').innerHTML = mgr1Html;
+        document.getElementById('mgr-calc2-inputs').innerHTML = mgr2Html;
+        document.getElementById('mgr-total-inputs').innerHTML = mgrTotalHtml;
+        loadRecords();
+    }
+
+    function openWorkerTab(tabName, btnElement) {
+        document.querySelectorAll('#worker-view .section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('#worker-view .tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('w-' + tabName).classList.add('active');
+        btnElement.classList.add('active');
+        if(tabName === 'end') updateBadges();
+        if(tabName === 'records') loadRecords();
+    }
+
+    function openManagerTab(tabName, btnElement) {
+        document.querySelectorAll('#manager-view .section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('#manager-view .tab-btn').forEach(b => b.classList.remove('mgr-active'));
+        document.getElementById('m-' + tabName).classList.add('active');
+        btnElement.classList.add('mgr-active');
+    }
+
+    // ================= MANAGER CALCULATE 1 LOGIC & CLEAR =================
+    function runManagerCalc1() {
+        let mCount = getMachineCount();
+        let targetC = getTargetChatak(mCount);
+        let mNames = getMachineNames();
+        let totalChatakAll = 0;
+        let breakdownHtml = '';
+
+        for(let i=1; i<=mCount; i++) {
+            let s = parseInt(document.getElementById('m1_s'+i).value) || 0;
+            let k = parseInt(document.getElementById('m1_k'+i).value) || 0;
+            let e = parseInt(document.getElementById('m1_e'+i).value) || 0;
+
+            let netChatak = (k * 16) + e - s;
+            if(netChatak < 0) netChatak = 0;
+
+            let mK = Math.floor(netChatak / 16);
+            let mC = netChatak % 16;
+            totalChatakAll += netChatak;
+
+            breakdownHtml += `<div>🔹 <b>${mNames[i-1]}:</b> ${netChatak} Chatak <i>(${mK}K ${mC}C)</i></div>`;
+        }
+
+        let finalK = Math.floor(totalChatakAll / 16);
+        let finalC = totalChatakAll % 16;
+        let div16Ans = formatDiv16(totalChatakAll);
+        let appliedRate = (totalChatakAll < targetC) ? 90 : 100;
+        let earning = totalChatakAll * (appliedRate / 16);
+        let rateColor = (appliedRate === 100) ? '#00e676' : '#ffca28';
+
+        let resBox = document.getElementById('mgr-res1');
+        resBox.style.display = 'block';
+        resBox.innerHTML = `
+            <div class="rate-badge" style="background:${rateColor}; color:#000;">${mCount} Machine Rate: ₹${appliedRate} (Target: ${targetC} C)</div>
+            <div style="font-size:13px; color:#ccc;">Kul Jogar:</div>
+            <div style="font-size:24px; font-weight:bold; color:#ffca28; margin:2px 0;">${totalChatakAll} Chatak</div>
+            <div class="div16-box">➗ ${totalChatakAll} ÷ 16 = <span style="color:#ffca28; font-size:20px;">${div16Ans} ÷</span></div>
+            <div style="font-size:15px; color:#fff; margin-bottom:4px;">(${finalK} Kapra, ${finalC} Chatak)</div>
+            <div class="result-total">₹${earning.toFixed(2)}</div>
+            <div class="m-breakdown">${breakdownHtml}</div>
+        `;
+    }
+
+    function clearManagerCalc1() {
+        let mCount = getMachineCount();
+        for(let i=1; i<=mCount; i++) {
+            let s = document.getElementById('m1_s'+i);
+            let k = document.getElementById('m1_k'+i);
+            let e = document.getElementById('m1_e'+i);
+            if(s) s.value = '';
+            if(k) k.value = '';
+            if(e) e.value = '';
+        }
+        document.getElementById('mgr-res1').style.display = 'none';
+    }
+
+    // ================= MANAGER CALCULATE 2 (5-BOX) LOGIC & CLEAR =================
+    function calc5BoxMachine(mIndex) {
+        let vals = [];
+        for(let b=1; b<=5; b++) {
+            let el = document.getElementById(`m2_${mIndex}_${b}`);
+            if(!el) continue;
+            let raw = el.value.trim();
+            if(raw !== "") {
+                vals.push(parseInt(raw) || 0);
+            }
+        }
+        if(vals.length < 2) return { total: 0, steps: [] };
+
+        let mTotal = 0;
+        let steps = [];
+        for(let j=0; j < vals.length - 1; j++) {
+            let prev = vals[j];
+            let curr = vals[j+1];
+            let diff = (curr >= prev) ? (curr - prev) : ((16 - prev) + curr);
+            mTotal += diff;
+            steps.push(diff);
+        }
+        return { total: mTotal, steps: steps };
+    }
+
+    function previewM2(mIndex) {
+        let res = calc5BoxMachine(mIndex);
+        document.getElementById(`m2_live_${mIndex}`).innerText = `Kul: ${res.total} C`;
+    }
+
+    function runManagerCalc2() {
+        let mCount = getMachineCount();
+        let targetC = getTargetChatak(mCount);
+        let mNames = getMachineNames();
+        let totalChatakAll = 0;
+        let breakdownHtml = '';
+
+        for(let i=1; i<=mCount; i++) {
+            let res = calc5BoxMachine(i);
+            let netChatak = res.total;
+            let mK = Math.floor(netChatak / 16);
+            let mC = netChatak % 16;
+            totalChatakAll += netChatak;
+
+            let stepStr = res.steps.length > 0 ? `[${res.steps.join(' + ')}]` : '';
+            breakdownHtml += `<div>🔹 <b>${mNames[i-1]}:</b> ${netChatak} Chatak ${stepStr} <i>(${mK}K ${mC}C)</i></div>`;
+        }
+
+        let finalK = Math.floor(totalChatakAll / 16);
+        let finalC = totalChatakAll % 16;
+        let div16Ans = formatDiv16(totalChatakAll);
+        let appliedRate = (totalChatakAll < targetC) ? 90 : 100;
+        let earning = totalChatakAll * (appliedRate / 16);
+        let rateColor = (appliedRate === 100) ? '#00e676' : '#ffca28';
+
+        let resBox = document.getElementById('mgr-res2');
+        resBox.style.display = 'block';
+        resBox.innerHTML = `
+            <div class="rate-badge" style="background:${rateColor}; color:#000;">${mCount} Machine Rate: ₹${appliedRate} (Target: ${targetC} C)</div>
+            <div style="font-size:13px; color:#ccc;">5-Box Kul Jogar:</div>
+            <div style="font-size:24px; font-weight:bold; color:#ffca28; margin:2px 0;">${totalChatakAll} Chatak</div>
+            <div class="div16-box">➗ ${totalChatakAll} ÷ 16 = <span style="color:#ffca28; font-size:20px;">${div16Ans} ÷</span></div>
+            <div style="font-size:15px; color:#fff; margin-bottom:4px;">(${finalK} Kapra, ${finalC} Chatak)</div>
+            <div class="result-total">₹${earning.toFixed(2)}</div>
+            <div class="m-breakdown">${breakdownHtml}</div>
+        `;
+    }
+
+    function clearManagerCalc2() {
+        let mCount = getMachineCount();
+        for(let i=1; i<=mCount; i++) {
+            for(let b=1; b<=5; b++) {
+                let el = document.getElementById(`m2_${i}_${b}`);
+                if(el) el.value = '';
+            }
+            let badge = document.getElementById(`m2_live_${i}`);
+            if(badge) badge.innerText = 'Kul: 0 C';
+        }
+        document.getElementById('mgr-res2').style.display = 'none';
+    }
+
+    // ================= MANAGER OPTION 3: TOTAL LOGIC & CLEAR =================
+    function runManagerTotal() {
+        let mCount = getMachineCount();
+        let targetC = getTargetChatak(mCount);
+        let total = 0;
+        let parts = [];
+
+        for(let i=1; i<=mCount; i++) {
+            let el = document.getElementById('mt_box_' + i);
+            let v = el ? (parseInt(el.value) || 0) : 0;
+            total += v;
+            parts.push(v);
+        }
+
+        let fK = Math.floor(total / 16);
+        let fC = total % 16;
+        let div16Ans = formatDiv16(total);
+        let appliedRate = (total < targetC) ? 90 : 100;
+        let earning = total * (appliedRate / 16);
+        let rateColor = (appliedRate === 100) ? '#00e676' : '#ffca28';
+
+        let resBox = document.getElementById('mgr-res-total');
+        resBox.style.display = 'block';
+        resBox.innerHTML = `
+            <div class="rate-badge" style="background:${rateColor}; color:#000;">Rate: ₹${appliedRate} (Target: ${targetC} C)</div>
+            <div style="font-size:13px; color:#ccc;">${parts.join(' + ')} =</div>
+            <div style="font-size:26px; font-weight:bold; color:#ffca28; margin:3px 0;">${total} Chatak (Jogar)</div>
+            <div class="div16-box">➗ ${total} ÷ 16 = <span style="color:#ffca28; font-size:20px;">${div16Ans} ÷</span></div>
+            <div style="font-size:16px; color:#fff;">(${fK} Kapra, ${fC} Chatak)</div>
+            <div class="result-total">₹${earning.toFixed(2)}</div>
+        `;
+    }
+
+    function clearManagerTotal() {
+        let mCount = getMachineCount();
+        for(let i=1; i<=mCount; i++) {
+            let el = document.getElementById('mt_box_' + i);
+            if(el) el.value = '';
+        }
+        document.getElementById('mgr-res-total').style.display = 'none';
+    }
+
+    // ================= MANAGER OPTION 4: PLUS (+) & 50/100 TARGET =================
+    function insertPlusSign() {
+        let inp = document.getElementById('round_input');
+        let val = inp.value.trim();
+        if(val !== "" && !val.endsWith("+")) {
+            inp.value = val + "+";
+        }
+        inp.focus();
+    }
+
+    function clearRoundInput() {
+        let inp = document.getElementById('round_input');
+        inp.value = "";
+        document.getElementById('mgr-res-round').style.display = 'none';
+        inp.focus();
+    }
+
+    function runRoundCalc() {
+        let raw = document.getElementById('round_input').value.trim();
+        let resBox = document.getElementById('mgr-res-round');
+        if(raw === "") {
+            resBox.style.display = 'none';
+            return;
+        }
+
+        let parts = raw.split('+');
+        let validNums = [];
+        let num = 0;
+
+        parts.forEach(p => {
+            let clean = p.trim();
+            if(clean !== "") {
+                let parsed = parseInt(clean);
+                if(!isNaN(parsed) && parsed >= 0) {
+                    validNums.push(parsed);
+                    num += parsed;
+                }
+            }
+        });
+
+        if(validNums.length === 0) {
+            resBox.style.display = 'none';
+            return;
+        }
+
+        let rem50 = num % 50;
+        let addNext50 = (rem50 === 0) ? 50 : (50 - rem50);
+        let targetNext50 = num + addNext50;
+
+        let rem100 = num % 100;
+        let addNext100 = (rem100 === 0) ? 100 : (100 - rem100);
+        let targetNext100 = num + addNext100;
+
+        let secondStepTarget = targetNext50 + 50;
+        let secondStepAdd = addNext50 + 50;
+        let thirdStepTarget = targetNext50 + 100;
+        let thirdStepAdd = addNext50 + 100;
+
+        let sumHeaderHtml = '';
+        if(validNums.length > 1) {
+            sumHeaderHtml = `
+            <div style="background:#004d40; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #00e676;">
+                <div style="font-size:12px; color:#80deea;">Jod (Plus) Ka Total:</div>
+                <div style="font-size:14px; color:#fff;">${validNums.join(' + ')} = <b style="font-size:22px; color:#ffca28;">${num}</b></div>
+            </div>`;
+        } else {
+            sumHeaderHtml = `<div style="font-size:14px; color:#ccc; margin-bottom:8px;">Number: <b style="color:#ffca28; font-size:18px;">${num}</b></div>`;
+        }
+
+        resBox.style.display = 'block';
+        resBox.innerHTML = `
+            ${sumHeaderHtml}
+            <div class="target-card">
+                <div style="font-size:12px; color:#80deea;">Agla Target (${targetNext50} banane ke liye):</div>
+                <div class="target-val">+ ${addNext50} chahiye ➔ ${targetNext50} hoga</div>
+                <div style="font-size:12px; color:#aaa;">(${num} + ${addNext50} = ${targetNext50})</div>
+            </div>
+            <div class="target-card" style="border-left-color:#ffca28;">
+                <div style="font-size:12px; color:#ffca28;">Agla 100 Target (${targetNext100} banane ke liye):</div>
+                <div class="target-val" style="color:#ffca28;">+ ${addNext100} chahiye ➔ ${targetNext100} hoga</div>
+                <div style="font-size:12px; color:#aaa;">(${num} + ${addNext100} = ${targetNext100})</div>
+            </div>
+            <div style="background:#1a1a1a; padding:8px; border-radius:6px; font-size:12px; color:#ccc; text-align:left;">
+                <div>🔸 <b>${secondStepTarget}</b> karne ke liye: <b style="color:#00e676;">+ ${secondStepAdd}</b> lagega</div>
+                <div style="margin-top:4px;">🔸 <b>${thirdStepTarget}</b> karne ke liye: <b style="color:#00e676;">+ ${thirdStepAdd}</b> lagega</div>
+            </div>
+        `;
+    }
+
+    // ================= WORKER LOGIC =================
+    function saveStartShift() {
+        let mCount = getMachineCount();
+        let data = {};
+        for(let i=1; i<=mCount; i++) {
+            let val = parseInt(document.getElementById('start_m'+i).value) || 0;
+            data['M'+i] = val;
+        }
+        try { localStorage.setItem('mill_shift_start', JSON.stringify(data)); } catch(e) {}
+        alert("✅ 2 Baje ka chatak save ho gaya! Ab raat 10 baje '10 PM (End)' tab kholein.");
+        updateBadges();
+    }
+
+    function updateBadges() {
+        let mCount = getMachineCount();
+        let savedStart = {};
+        try { savedStart = JSON.parse(localStorage.getItem('mill_shift_start') || '{}'); } catch(e) {}
+        for(let i=1; i<=mCount; i++) {
+            let p = savedStart['M'+i] || 0;
+            let badge = document.getElementById('badge_m'+i);
+            if(badge) badge.innerText = `Pichla: ${p} C`;
+        }
+    }
+
+    function calculateAndSave() {
+        let mCount = getMachineCount();
+        let targetC = getTargetChatak(mCount);
+        let savedStart = {};
+        try { savedStart = JSON.parse(localStorage.getItem('mill_shift_start') || '{}'); } catch(e) {}
+        let mNames = getMachineNames();
+        let totalNetChatak = 0;
+        let details = [];
+
+        for(let i=1; i<=mCount; i++) {
+            let prev = savedStart['M'+i] || 0;
+            let k = parseInt(document.getElementById('end_k'+i).value) || 0;
+            let c = parseInt(document.getElementById('end_c'+i).value) || 0;
+
+            let gross = (k * 16) + c;
+            let net = gross - prev;
+            if(net < 0) net = 0;
+
+            let netK = Math.floor(net / 16);
+            let netC = net % 16;
+            totalNetChatak += net;
+            details.push(`${mNames[i-1]}: ${netK}K ${netC}C`);
+        }
+
+        let finalK = Math.floor(totalNetChatak / 16);
+        let finalC = totalNetChatak % 16;
+
+        let appliedRate = (totalNetChatak < targetC) ? 90 : 100;
+        let earning = totalNetChatak * (appliedRate / 16);
+
+        let rateColor = (appliedRate === 100) ? '#00e676' : '#ffca28';
+        let resBox = document.getElementById('final-result');
+        resBox.style.display = 'block';
+        resBox.innerHTML = `
+            <div class="rate-badge" style="background:${rateColor}; color:#000;">${mCount} Machine Rate: ₹${appliedRate} (Target: ${targetC} C)</div>
+            <div>Aapka Asli Kaam (Net):</div>
+            <div style="font-size:19px; font-weight:bold; margin:5px 0;">${finalK} Kapra, ${finalC} Chatak (${totalNetChatak} C)</div>
+            <div class="result-total">₹${earning.toFixed(2)}</div>
+            <div style="font-size:12px; color:#80deea;">(${details.join(' | ')})</div>
+        `;
+
+        let records = [];
+        try { records = JSON.parse(localStorage.getItem('mill_records') || '[]'); } catch(e) {}
+        let now = new Date();
+        let dateStr = now.toLocaleDateString('en-IN') + ' ' + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        records.unshift({
+            id: Date.now(),
+            timestamp: Date.now(),
+            mCount: mCount,
+            date: dateStr,
+            netChatak: totalNetChatak,
+            rate: appliedRate,
+            summary: `${finalK} Kapra, ${finalC} Chatak (${totalNetChatak} C)`,
+            earning: earning.toFixed(2),
+            details: details.join(' | ')
+        });
+        
+        try {
+            localStorage.setItem('mill_records', JSON.stringify(records));
+            localStorage.removeItem('mill_shift_start');
+        } catch(e) {}
+        
+        for(let i=1; i<=mCount; i++) {
+            document.getElementById('start_m'+i).value = '';
+            document.getElementById('end_k'+i).value = '';
+            document.getElementById('end_c'+i).value = '';
+        }
+        updateBadges();
+    }
+
+    function setFilter(filterType, btn) {
+        currentFilter = filterType;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadRecords();
+    }
+
+    function loadRecords() {
+        let records = [];
+        try { records = JSON.parse(localStorage.getItem('mill_records') || '[]'); } catch(e) {}
+        let list = document.getElementById('record-list');
+        let now = new Date();
+
+        let filtered = records.filter(r => {
+            if(!r.timestamp) return true;
+            let recDate = new Date(r.timestamp);
+            if(currentFilter === 'week') {
+                let sevenDaysAgo = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+                return r.timestamp >= sevenDaysAgo;
+            }
+            if(currentFilter === 'month') {
+                return recDate.getMonth() === now.getMonth() && recDate.getFullYear() === now.getFullYear();
+            }
+            return true;
+        });
+
+        if(filtered.length === 0) {
+            list.innerHTML = '<p style="text-align:center; color:#777;">Is hisab mein abhi koi record nahi hai.</p>';
+            return;
+        }
+
+        let totalAll = 0;
+        let totalChatakPeriod = 0;
+        let html = '';
+
+        filtered.forEach(r => {
+            totalAll += parseFloat(r.earning);
+            if(r.netChatak !== undefined) totalChatakPeriod += r.netChatak;
+            let mBadge = r.mCount ? `${r.mCount}M ` : '';
+            let rBadge = r.rate ? `<span style="background:#37474f; color:#ffca28; padding:2px 6px; border-radius:4px; font-size:11px;">${mBadge}@₹${r.rate}</span>` : '';
+            let recId = r.id || r.timestamp;
+
+            html += `
+            <div class="record-item">
+                <div class="record-date">
+                    <span>📅 ${r.date} ${rBadge}</span>
+                    <span style="color:#00e676; font-size:15px;">₹${r.earning}</span>
+                </div>
+                <div><b>Kul Kaam:</b> ${r.summary}</div>
+                <div style="color:#aaa; font-size:11px; margin-top:3px;">${r.details}</div>
+                <div class="rec-actions">
+                    <button class="act-btn btn-edit" onclick="editRecord(${recId})">✏️ Edit</button>
+                    <button class="act-btn btn-del" onclick="deleteRecord(${recId})">🗑️ Delete</button>
+                </div>
+            </div>`;
+        });
+
+        let pK = Math.floor(totalChatakPeriod / 16);
+        let pC = totalChatakPeriod % 16;
+        let filterLabel = currentFilter === 'week' ? 'Pichle 7 Din' : (currentFilter === 'month' ? 'Is Mahine' : 'Ab Tak');
+
+        let summaryBox = `
+        <div class="summary-card">
+            <div style="font-size:12px; color:#80deea;">${filterLabel} Ka Kul Hisab (${filtered.length} Shift)</div>
+            <div style="font-size:22px; font-weight:bold; color:#00e676; margin:4px 0;">₹${totalAll.toFixed(2)}</div>
+            <div style="font-size:13px; color:#fff;">Kul: <b>${pK} Kapra, ${pC} Chatak (${totalChatakPeriod} C)</b></div>
+        </div>`;
+
+        list.innerHTML = summaryBox + html;
+    }
+
+    function deleteRecord(id) {
+        if(confirm("Kya aap is din ki entry ko mitana chahte hain?")) {
+            let records = [];
+            try { records = JSON.parse(localStorage.getItem('mill_records') || '[]'); } catch(e) {}
+            records = records.filter(r => (r.id || r.timestamp) !== id);
+            try { localStorage.setItem('mill_records', JSON.stringify(records)); } catch(e) {}
+            loadRecords();
+        }
+    }
+
+    function editRecord(id) {
+        let records = [];
+        try { records = JSON.parse(localStorage.getItem('mill_records') || '[]'); } catch(e) {}
+        let idx = records.findIndex(r => (r.id || r.timestamp) === id);
+        if(idx === -1) return;
+
+        let rec = records[idx];
+        let oldK = rec.netChatak !== undefined ? Math.floor(rec.netChatak / 16) : 0;
+        let oldC = rec.netChatak !== undefined ? (rec.netChatak % 16) : 0;
+
+        let newK = prompt("Sahi Kul Kapra likhein:", oldK);
+        if(newK === null) return;
+        let newC = prompt("Sahi Extra Chatak likhein (0-15):", oldC);
+        if(newC === null) return;
+
+        let k = parseInt(newK) || 0;
+        let c = Math.min(15, Math.max(0, parseInt(newC) || 0));
+        let totalNet = (k * 16) + c;
+        let fK = Math.floor(totalNet / 16);
+        let fC = totalNet % 16;
+
+        let recMCount = rec.mCount || getMachineCount();
+        let targetC = getTargetChatak(recMCount);
+        let rate = (totalNet < targetC) ? 90 : 100;
+        let earning = totalNet * (rate / 16);
+
+        records[idx].netChatak = totalNet;
+        records[idx].rate = rate;
+        records[idx].summary = `${fK} Kapra, ${fC} Chatak (${totalNet} C)`;
+        records[idx].earning = earning.toFixed(2);
+        records[idx].details = `(Edited: ${fK}K ${fC}C)`;
+
+        try { localStorage.setItem('mill_records', JSON.stringify(records)); } catch(e) {}
+        loadRecords();
+    }
+
+    function clearRecords() {
+        if(confirm("⚠️ Kya aap sach mein SARA purana record hamesha ke liye mitana chahte hain?")) {
+            try { localStorage.removeItem('mill_records'); } catch(e) {}
+            loadRecords();
+        }
+    }
+
+    initForms();
+</script>
+</body>
+</html>
