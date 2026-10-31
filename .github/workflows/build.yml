@@ -24,17 +24,10 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Install Cordova and Android Dependencies
+    - name: Install Cordova and Build APK
       run: |
-        yes | sdkmanager --licenses || true
-        sdkmanager --install "build-tools;33.0.2" "platforms;android-33"
         npm install -g cordova@12.0.0
-
-    - name: Create Cordova App & Build APK
-      run: |
+        
         cordova create app com.akashmistri.jogarkhata "Jogar Khata"
         cd app
         rm -rf www/*
